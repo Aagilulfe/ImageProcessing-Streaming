@@ -1,0 +1,33 @@
+gst-launch-1.0 v4l2src ! jpegdec ! xvimagesink
+
+
+Get rpi to hdmi stream:
+raspivid (needs to enable rasp cam)
+example : raspivid -o test.h2624 -t 30000
+
+
+
+Distant stream:
+
+on client
+gst-launch-1.0 -v tcpclientsrc host=192.168.1.161 port=5000  ! gdpdepay !  rtph264depay ! avdec_h264 ! videoconvert ! autovideosink sync=false
+
+on rasp
+raspivid -t 0 -fps 20 -w 300 -h 300 -o - | gst-launch-1.0 fdsrc ! h264parse ! rtph264pay config-interval=1 pt=96 ! gdppay ! tcpserversink host=192.168.1.37 port=5000
+raspivid -t 0 -fps 30 -n -w 1920 -h 1080 -o - | gst-launch-1.0 fdsrc ! h264parse ! rtph264pay config-interval=1 pt=96 ! gdppay ! tcpserversink host=192.168.1.102 port=5000
+
+raspivid -n -t 0 -w 1920 -h 1080 -fps 30 -ih -fl -l -o - | /bin/nc -klvp 5000	Works with opencv!
+
+
+
+OPENCV:
+Videocapture
+
+
+sudo vcgencmd get_camera
+
+
+FOR STREAM TEST ON SAME MACHINE:
+sender : gst-launch-1.0 v4l2src ! jpegenc ! tcpserversink host=localhost port=5000
+receiver : gst-launch-1.0 -v tcpclientsrc host=localhost port=5000  ! jpegdec ! xvimagesink
+(remove the "host" flag if localhost)
